@@ -1,0 +1,150 @@
+<html>
+<head>
+    <title>Wordle</title>
+    <!-- Load required Bootstrap and BootstrapVue CSS -->
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" />
+
+    <!-- Load Vue followed by BootstrapVue -->
+    <script src="https://unpkg.com/vue@2.6.14/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script>
+
+    <!-- Load the following for BootstrapVueIcons support -->
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+
+            Vue.use(BootstrapVue)
+            Vue.component('entry-row', {
+                template : '#entry-row-template',
+                props : {
+                    trial : Number
+                },
+                data()  {
+                    return {
+                        letters : Array.from({ length : 5 }, () => ""),
+                        result : [ Array.from({ length : 5 }, () => "" ) ],
+                        showRestart : false
+                    }
+                },
+                methods : {
+                    formatter : function(c) {
+                        return c.toUpperCase()
+                    },
+                    handleInput : function(colIndex, event) {
+                        // Auto move to the next cell if input is made
+                        if (event.length === 1) {
+                            const nextCol = colIndex + 1;
+                            if (nextCol < 5) {
+                                // Move focus to the next column in the same row
+                                var elem = `#input-${this.trial}-${nextCol}`
+                                $(elem).focus();
+                            }
+                        }
+                    },
+                    guess : function() {
+                        word = this.letters.join("").toLowerCase()
+                        $.ajax({
+                            url : `/wordle/guess/${word}`
+                        }).done(this.processResult)
+                    },
+                    mergeState : function(letters, states) {
+                        entry = {}
+                        cellVariant = {}
+                        for (var i = 0; i < letters.length; i++) {
+                            entry[i] = letters[i]
+                            var color
+                            switch (states[i]) {
+                                case 0:
+                                    cellVariant[i] = "success";
+                                    break;
+                                case 1:
+                                    cellVariant[i] = "danger"
+                                    break
+                                case 2:
+                                    cellVariant[i] = "warning"
+                                    break
+                            }
+
+                        }
+                        entry["_cellVariants"] = cellVariant
+                        console.log(entry)
+                        return entry
+                    },
+                    processResult : function(data) {
+                        console.log(data)
+                        console.log(this.letters)
+                        if (data.result) {
+                            this.result.push(this.mergeState(this.letters, data.states))
+                            this.showRestart = true
+                        } else if (data.states) {
+                            this.result.push(this.mergeState(this.letters, data.states))
+                        } else {
+                            alert(data.reason)
+                        }
+                        this.letters = Array.from({length : 5}, () => "")
+                    },
+                    processRestart : function() {
+                        this.result = [ Array.from({ length : 5 }, () => "" ) ]
+                        this.showRestart = false
+                    },
+                    restart : function() {
+                        $.ajax({
+                            url : '/wordle/restart'
+                        }).done(this.processRestart)
+                    }
+                }
+            })
+            vue = new Vue({
+                el : '#app',
+                data : {
+                    title : 'Wordle',
+                    entries : [],
+                    trials : [0],
+
+                },
+                methods : {
+
+                }
+            })
+        })
+    </script>
+</head>
+<body>
+    <template id="entry-row-template">
+        <div style="width: 400px; margin: auto">
+            <b-container>
+                <b-row>
+                    <b-col>
+                        <b-table :items="result" headless responsive>
+                            <template #head()="data">&nbsp;</template>
+                        </b-table>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col v-for="(letter, colIndex) in letters" :key="colIndex" class="d-flex justify-content-center">
+                        <b-input :id="`input-${trial}-${colIndex}`" v-model="letters[colIndex]" class="text-center" :formatter="formatter" :maxlength="1" @input="handleInput(colIndex, $event)" tabindex="0"></b-input>
+                    </b-col>
+                </b-row>
+                <b-row>
+                    <b-col>
+                        <b-button :disabled="showRestart" class="mt-2" style="width: 100%" variant="success" @click="guess">Enter</b-button>
+                        <b-button v-show="showRestart" class="mt-2" style="width: 100%" variant="info" @click="restart">Restart</b-button>
+                    </b-col>
+                </b-row>
+            </b-container>
+        </div>
+    </template>
+    <div id="app">
+        <b-navbar toggleable="lg" variant="info">
+            <b-navbar-brand href="#" >{{ title }}</b-navbar-brand>
+        </b-navbar>
+        <b-card>
+            <entry-row v-for="trial in trials" :trial="trial"></entry-row>
+        </b-card>
+    </div>
+</body>
+</html>
