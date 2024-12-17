@@ -16,7 +16,7 @@ def new_word():
         'count' : 0,
         'last-guess' : None,
         'last-result' : None,
-        'secret-word' : secret.secret,
+        #'secret-word' : secret.secret,
         'start-time' : datetime.now(),
         'duration' : None
     }
@@ -37,6 +37,8 @@ class WordleGuess(Resource):
         result = records[-1]['secret'].guess(word)
         records[-1]['last-result'] = result
         records[-1]['duration'] = datetime.now() - records[-1]['start-time']
+        result['count'] = records[-1]['count']
+        result['duration'] = records[-1]['duration'].total_seconds()
         return result
 
 class WordleInit(Resource):
