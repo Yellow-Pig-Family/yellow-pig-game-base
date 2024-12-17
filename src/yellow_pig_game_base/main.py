@@ -1,8 +1,6 @@
 
 from src.yellow_pig_game_base.game_server import GameServer
-from yellow_pig_game_base.wordle import WordleInit, WordleGuess
-
-
+from src.yellow_pig_game_base.wordle import WordleInit, WordleGuess
 
 if __name__ == '__main__':
     server = GameServer()
