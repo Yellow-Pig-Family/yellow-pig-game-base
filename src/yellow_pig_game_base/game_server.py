@@ -14,4 +14,4 @@ class GameServer:
         self.api.add_resource(game, path)
 
     def start(self):
-        self.app.run(debug=True, port=8080)
+        self.app.run(debug=False, port=8080)
